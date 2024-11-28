@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário de Registro</title>
+    <style>
+        body {
+            background-color: #FFEB3B; /* Amarelo claro */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 36px;
+            margin-top: 20px;
+        }
+
+        .calendar {
+            width: 300px;
+            margin: 20px auto;
+            background-color: #ADD8E6;
+            color: black;
+            font-weight: bold;
+            padding: 10px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .calendar-grid div {
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .notes-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .notes-section textarea {
+            width: 90%;
+            height: 100px;
+            margin-top: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            resize: none;
+        }
+
+        .notes-section button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .saved-notes {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #FFF;
+            border: 1px solid #333;
+            width: 90%;
+            margin: auto;
+        }
+
+        .saved-note {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+
+        .delete-btn {
+            background-color: #F44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        /* Quadro do versículo bíblico */
+        .verse-box {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 4cm;
+            height: 4cm;
+            background-color: #FFF;
+            border: 1px solid #333;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="title">Calendário de Registro</div>
+
+    <!-- Quadro do Versículo Bíblico -->
+    <div class="verse-box" id="verse-box"></div>
+
+    <div class="calendar">
+        <div class="month-year" id="month-year"></div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+
+    <div class="notes-section">
+        <h3>Bloco de Anotações</h3>
+        <div id="selected-date"></div>
+        <textarea id="notes" placeholder="Digite suas anotações aqui..."></textarea>
+        <button onclick="saveNotes()">Salvar Anotações</button>
+    </div>
+
+    <div class="saved-notes" id="saved-notes">
+        <h3>Registros Salvos</h3>
+    </div>
+
+    <script>
+        // Versículos bíblicos
+        const verses = [
+            "Porque Deus amou o mundo de tal maneira que deu seu Filho unigênito, para que todo aquele que nele crer não pereça, mas tenha a vida eterna. – João 3:16",
+            "O Senhor é o meu pastor; nada me faltará. – Salmo 23:1",
+            "Tudo posso naquele que me fortalece. – Filipenses 4:13",
+            "Pois eu bem sei os planos que tenho a vosso respeito, diz o Senhor; planos de fazê-los prosperar e não de lhes causar dano, planos de lhes dar esperança e um futuro. – Jeremias 29:11",
+            "O Senhor é a minha luz e a minha salvação; a quem temerei? O Senhor é a fortaleza da minha vida; de quem me recearei? – Salmo 27:1"
+        ];
+
+        // Função para exibir um versículo aleatório
+        function loadRandomVerse() {
+            const verseBox = document.getElementById("verse-box");
+            const randomVerse = verses[Math.floor(Math.random() * verses.length)];
+            verseBox.textContent = randomVerse;
+        }
+
+        function formatDate(date) {
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+            return `${day < 10 ? "0" + day : day}/${month < 10 ? "0" + month : month}/${year}`;
+        }
+
+        function generateCalendar(month, year) {
+            const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            document.getElementById("month-year").textContent = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            const calendarGrid = document.getElementById("calendar-grid");
+
+            calendarGrid.innerHTML = "";
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement("div");
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            for (let i = 1; i <= lastDate; i++) {
+                const dayCell = document.createElement("div");
+                dayCell.textContent = i;
+                dayCell.onclick = () => selectDate(i, month, year);
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        function selectDate(day, month, year) {
+            const selectedDate = new Date(year, month, day);
+            const formattedDate = formatDate(selectedDate);
+            document.getElementById("selected-date").textContent = `Data selecionada: ${formattedDate}`;
+            const savedNotes = localStorage.getItem(`notes-${formattedDate}`);
+            document.getElementById("notes").value = savedNotes || "";
+        }
+
+        function saveNotes() {
+            const notes = document.getElementById("notes").value;
+            const selectedDateText = document.getElementById("selected-date").textContent;
+            if (selectedDateText) {
+                const date = selectedDateText.replace("Data selecionada: ", "");
+                localStorage.setItem(`notes-${date}`, notes);
+                displaySavedNotes();
+                alert("Anotações salvas com sucesso!");
+            } else {
+                alert("Por favor, selecione uma data!");
+            }
+        }
+
+        function deleteNote(key) {
+            localStorage.removeItem(key);
+            displaySavedNotes();
+            alert("Anotação excluída com sucesso!");
+        }
+
+        function displaySavedNotes() {
+            const savedNotesContainer = document.getElementById("saved-notes");
+            savedNotesContainer.innerHTML = "<h3>Registros Salvos</h3>";
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith("notes-")) {
+                    const note = localStorage.getItem(key);
+                    const noteElement = document.createElement("div");
+                    noteElement.className = "saved-note";
+
+                    const noteText = document.createElement("span");
+                    noteText.textContent = `${key.replace("notes-", "")}: ${note}`;
+
+                    const deleteButton = document.createElement("button");
+                    deleteButton.textContent = "Excluir";
+                    deleteButton.className = "delete-btn";
+                    deleteButton.onclick = () => deleteNote(key);
+
+                    noteElement.appendChild(noteText);
+                    noteElement.appendChild(deleteButton);
+                    savedNotesContainer.appendChild(noteElement);
+                }
+            });
+        }
+
+        function initPage() {
+            const now = new Date();
+            generateCalendar(now.getMonth(), now.getFullYear());
+            displaySavedNotes();
+            loadRandomVerse();
+        }
+
+        window.onload = initPage;
+    </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
